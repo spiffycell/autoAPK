@@ -1,0 +1,9 @@
+#!/bin/bash
+
+script=$1
+app=$2
+
+if [ $script == '--decode' ]; then
+	bin/decodeAPK $app
+fi
+

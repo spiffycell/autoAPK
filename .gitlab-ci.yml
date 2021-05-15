@@ -1,0 +1,20 @@
+image: jumanjiman/cci
+
+stages:
+        - build
+        - test
+        - deploy
+
+build:
+        stage: build
+        script: 
+                - sdlc/build
+test:
+        stage: test
+        script:
+                - sdlc/test
+
+deploy:
+        stage: deploy
+        script:
+                - sdlc/deploy

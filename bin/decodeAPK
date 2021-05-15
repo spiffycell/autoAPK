@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# ANSI colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+
+finish () {
+	printf "${RED}[-]${NC} Error encountered: $1\n"
+	printf "${RED}[-]${NC} Exiting...\n"
+	exit 1
+}
+
+
+app=$1
+
+
+# check to make sure device is connected
+printf "${BLUE}[*]${NC} Checking for device...\n"
+deviceCheck=$(adb devices | wc -l)
+
+
+# if device not found
+if [ $deviceCheck -le 2 ]; then
+	error="Device not found"
+	finish "$error"
+fi
+
+
+# if device found
+devices=$(adb devices)
+readarray -t devices <<<"$devices"
+printf "${GREEN}[+]${NC} Device found: (${devices[1]})\n"
+
+
+# check for requested app package
+packageCheck="adb shell pm list packages | grep $app"
+printf "${BLUE}[*]${NC} Checking device for app: '$app'...\n"
+packageList=$($packageCheck)
+
+
+# if app not found
+if [ $? -ne 0 ]; then
+	error="App '$app' not found"
+	finish "$error"
+fi
+
+
+# create folder for APK
+printf "${GREEN}[+]${NC} App '$app' found! ($packageList)\n"
+mkdir -p app/$app
+packageCommand="echo $packageList | cut -d ':' -f 2"
+package=$($packageCheck | cut -d ":" -f 2)
+
+
+# find the base APK
+shellPath=$(adb shell pm path $package)
+printf "${GREEN}[+]${NC} Base APK found\n"
+readarray -t base <<< "$shellPath"
+basePath="${base[0]}"
+basePath=`echo $basePath | cut -d ':' -f 2`
+
+
+# pull the base APK
+printf "${GREEN}[+]${NC} Pulling base.apk...\n"
+adb pull $basePath app/$app/
+
+# decompile the APK
+printf "${GREEN}[+]${NC} Decoding the APK...\n"
+(cd app/$app/; apktool d -f base.apk)
+printf "${GREEN}[+]${NC} APK decode successful!\n"
+
+# get dex2jar
+if [ -e app/$app/classes.dex ]; then
+	if [ -n /opt/dex2jar-2.0 ]; then
+		printf "${BLUE}[*]${NC} Installing dex2jar!\n"
+		wget https://sourceforge.net/projects/dex2jar/files/latest/download
+		sudo unzip download -d /opt/
+		rm download
+		chmod +x /opt/dex2jar-2.0/* 
+	fi
+
+		
+	printf "${BLUE}[*]${NC} Converting classes.dex to JAR\n"
+	sudo /opt/dex2jar-2.0/d2j-dex2jar.sh app/$app/base/classes.dex
+fi

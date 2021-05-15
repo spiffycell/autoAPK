@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -eEu
+set -o pipefail
+
+echo 'build'
