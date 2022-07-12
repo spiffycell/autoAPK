@@ -79,7 +79,7 @@ if [ -e app/$app/classes.dex ]; then
 		wget https://sourceforge.net/projects/dex2jar/files/latest/download
 		sudo unzip download -d /opt/
 		rm download
-		chmod +x /opt/dex2jar-2.0/* 
+	chmod +x /opt/dex2jar-2.0/* 
 	fi
 
 		
